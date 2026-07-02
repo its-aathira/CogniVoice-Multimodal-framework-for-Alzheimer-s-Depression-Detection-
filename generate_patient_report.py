@@ -58,7 +58,7 @@ def extract_features_and_raw(filepath):
     
     avg_psds = np.mean(psds, axis=0)
     theta = np.mean(avg_psds[np.logical_and(freqs >= 4, freqs <= 8)])
-    alpha = np.mean(avg_psds[np.logical_and(freqs >= 8, freqs <= 12)])
+    alpha = np.mean(avg_psds[np.logical_and(freqs >= 8, freqs <= 12)]) 
     beta = np.mean(avg_psds[np.logical_and(freqs >= 13, freqs <= 30)])
     tar = theta / alpha if alpha > 0 else 0
 
