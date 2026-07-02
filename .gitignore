@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+.env
+
+# OS-specific
+.DS_Store
+
+# Large datasets & Raw directories
+Multimodel_Dataset/
+Test data /
+data_alzheimers/
+data_depression/
+healthy/
+temp_eeg.mat
+temp_eeg.set
+temp_eeg.txt
+temp_voice.wav
+
+# ML model binaries and scalers
+*.pkl
+
+# Intermediate datasets
+*.csv
