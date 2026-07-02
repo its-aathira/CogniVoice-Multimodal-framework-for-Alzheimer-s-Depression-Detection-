@@ -17,7 +17,7 @@ image_path = os.path.join(project_root, "frontend", "assets", "confusion_matrix_
 
 # 1. Load Data
 if not os.path.exists(data_path):
-    print("❌ Error: Master dataset not found. Run the merge script first!")
+    print("❌Error: Master dataset not found. Run the merge script first!")
     exit()
 
 df = pd.read_csv(data_path)
