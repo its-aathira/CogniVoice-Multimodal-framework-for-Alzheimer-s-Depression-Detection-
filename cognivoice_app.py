@@ -10,7 +10,7 @@ Clean final version. Uses:
 """
 
 import streamlit as st
-import joblib 
+import joblib
 import os
 import numpy as np
 import warnings
@@ -256,34 +256,6 @@ if st.sidebar.button("🚀 Run Multimodal Analysis"):
         eeg_proba = predict_proba_3class(bundle["eeg_model"], bundle["eeg_scaler"], eeg_raw)
         eeg_pred, eeg_conf, eeg_label = confidence_label(eeg_proba)
 
-        # --- HW FALLBACK OVERRIDE ---
-        # The Bonn .txt dataset has inherent hardware frequencies that inevitably 
-        # mirror MODMA Depression markers even in relative power space. 
-        # We manually intercept to preserve clinical accuracy until a new Bonn model is trained.
-        if eeg_file.name.endswith('.txt') and eeg_label == "Depression":
-            eeg_label = "Healthy"
-            eeg_pred = 0
-            eeg_proba = np.array([[0.82, 0.12, 0.06]])
-            eeg_conf = 82.0
-
-        # --- 🚨 HYBRID DEMO OVERRIDES 🚨 ---
-        eeg_base = eeg_file.name.rsplit('.', 1)[0].lower()
-        if (eeg_base.endswith("_a") or "alz" in eeg_base) and eeg_pred != 1:
-            eeg_label = "Alzheimer's"
-            eeg_pred = 1
-            eeg_proba = np.array([[0.05, 0.88, 0.07]])
-            eeg_conf = 88.0
-        elif (eeg_base.endswith("_d") or "dep" in eeg_base) and eeg_pred != 2:
-            eeg_label = "Depression"
-            eeg_pred = 2
-            eeg_proba = np.array([[0.04, 0.08, 0.88]])
-            eeg_conf = 88.0
-        elif (eeg_base.endswith("_h") or eeg_base.endswith("h") or "hea" in eeg_base) and eeg_pred != 0:
-            eeg_label = "Healthy"
-            eeg_pred = 0
-            eeg_proba = np.array([[0.82, 0.12, 0.06]])
-            eeg_conf = 82.0
-
         result_card(eeg_label, eeg_conf, prefix="EEG Signal →")
 
         with st.expander("🔍 Raw EEG features"):
@@ -374,17 +346,6 @@ if st.sidebar.button("🚀 Run Multimodal Analysis"):
                     voice_label_shown  = "No Audio"
                     voice_conf_shown   = 0.0
 
-                v_base = voice_file.name.rsplit('.', 1)[0].lower()
-                if (v_base.endswith("_a") or "alz" in v_base) and voice_label_shown != "Alzheimer's":
-                    voice_label_shown = "Alzheimer's"
-                    voice_conf_shown = 95.0
-                elif (v_base.endswith("_d") or "dep" in v_base or "sad" in v_base) and voice_label_shown != "Depression":
-                    voice_label_shown = "Depression"
-                    voice_conf_shown = 95.0
-                elif (v_base.endswith("_h") or "hea" in v_base or "neutral" in v_base) and voice_label_shown != "Healthy":
-                    voice_label_shown = "Healthy"
-                    voice_conf_shown = 92.0
-
                 result_card(voice_label_shown, voice_conf_shown, prefix="Voice Signal →")
 
             except Exception as e:
@@ -400,61 +361,6 @@ if st.sidebar.button("🚀 Run Multimodal Analysis"):
 
     try:
         result = perform_fusion_diagnosis(bundle, eeg_raw, voice_features_raw)
-        
-        # --- 🚨 HYBRID PRESENTATION OVERRIDES 🚨 ---
-        # Override EEG probabilities
-        e_base = eeg_file.name.rsplit('.', 1)[0].lower()
-        if (e_base.endswith("_a") or "alz" in e_base) and result["eeg_pred"] != 1:
-            result["eeg_proba"] = np.array([0.05, 0.88, 0.07])
-            result["eeg_pred"] = 1
-            result["eeg_conf"] = 88.0
-        elif (e_base.endswith("_d") or "dep" in e_base) and result["eeg_pred"] != 2:
-            result["eeg_proba"] = np.array([0.04, 0.08, 0.88])
-            result["eeg_pred"] = 2
-            result["eeg_conf"] = 88.0
-        elif (e_base.endswith("_h") or e_base.endswith("h") or "hea" in e_base) and result["eeg_pred"] != 0:
-            result["eeg_proba"] = np.array([0.82, 0.12, 0.06])
-            result["eeg_pred"] = 0
-            result["eeg_conf"] = 82.0
-            
-        # Override Voice probabilities
-        if voice_file:
-            v_base = voice_file.name.rsplit('.', 1)[0].lower()
-            if (v_base.endswith("_a") or "alz" in v_base) and result["voice_pred"] != 1:
-                result["voice_proba"] = np.array([0.01, 0.95, 0.04])
-                result["voice_pred"] = 1
-                result["voice_conf"] = 95.0
-            elif (v_base.endswith("_d") or "dep" in v_base or "sad" in v_base) and result["voice_pred"] != 2:
-                result["voice_proba"] = np.array([0.02, 0.03, 0.95])
-                result["voice_pred"] = 2
-                result["voice_conf"] = 95.0
-            elif (v_base.endswith("_h") or "hea" in v_base or "neutral" in v_base or "neautral" in v_base) and result["voice_pred"] != 0:
-                result["voice_proba"] = np.array([0.92, 0.04, 0.04])
-                result["voice_pred"] = 0
-                result["voice_conf"] = 92.0
-
-        # Re-run Dynamic Fusion with overridden probabilities!
-        eeg_p = result["eeg_proba"]
-        voice_p = result["voice_proba"]
-        if voice_p.sum() > 0:
-            eeg_c = (result["eeg_conf"] / 100.0) ** 4
-            voice_c = (result["voice_conf"] / 100.0) ** 4
-            eeg_w = eeg_c * 0.85
-            voice_w = voice_c * 0.15
-            tot = eeg_w + voice_w
-            eeg_w /= tot if tot > 0 else 1
-            voice_w /= tot if tot > 0 else 1
-            result["final_proba"] = eeg_w * eeg_p + voice_w * voice_p
-        else:
-            result["final_proba"] = eeg_p.copy()
-            
-        result["final_pred"] = int(np.argmax(result["final_proba"]))
-        result["final_conf"] = float(result["final_proba"][result["final_pred"]] * 100)
-        
-        emoji = {"Healthy": "🟢", "Alzheimer's": "🔴", "Depression": "🟠"}
-        label = CLASS_MAP[result["final_pred"]]
-        result["final_diagnosis"] = f"{emoji[label]} {label.upper()}"
-            
     except Exception as e:
         st.error(f"Fusion error: {e}")
         import traceback
