@@ -31,7 +31,7 @@ def run_alzheimers_fusion(eeg_file_path, patient_index):
         print("❌ Error: EEG Processing Failed.")
         return
 
-    # --- STEP B: LINGUISTIC & ACOUSTIC STREAM (Kaggle Lookup) ---
+    # --- STEP B: LINGUISTIC & ACOUSTIC STREAM (Kaggle ) ---
     print(f"📂 Accessing Patient Feature Profile (Row: {patient_index})...")
     if os.path.exists(KAGGLE_CSV_PATH):
         df_alz = pd.read_csv(KAGGLE_CSV_PATH)
